@@ -22,6 +22,7 @@ class ApiAccessController extends Controller
         $this->stdout(PHP_EOL);
         $this->stdout(str_pad('', '100', '-') . PHP_EOL);
         
+        $key = -1;
         foreach ($models as $key => $model) {
             $this->stdout(str_pad($model->id, '8', ' ', STR_PAD_RIGHT));
             $this->stdout(str_pad($model->username, '32', ' ', STR_PAD_RIGHT));
