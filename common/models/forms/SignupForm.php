@@ -99,10 +99,10 @@ class SignupForm extends Model
         $normal_user = $this->createNormalUser();
         if ($normal_user !== false) {
             $this->sendMail($normal_user);
-            return true;
+            return $normal_user->user;
         }
         
-        return false;
+        return null;
     }
     
     /**
@@ -116,7 +116,7 @@ class SignupForm extends Model
             'email' => $this->email,
             'password' => $this->password
         ]);
-    
+        
         if ($normal_user->save()) {
             return $normal_user;
         } else {

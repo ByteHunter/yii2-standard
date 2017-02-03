@@ -23,7 +23,7 @@ use yii\db\Expression;
  * @property Admin $admin
  * @property AuthAssignment[] $authAssignments
  * @property AuthItem[] $itemNames
- * @property NormalUser[] $normalUser
+ * @property NormalUser $normalUser
  */
 class User extends ActiveRecord implements IdentityInterface
 {
@@ -358,8 +358,8 @@ class User extends ActiveRecord implements IdentityInterface
         if ( $this->isAdmin() && $this->admin !== null ) {
             return $this->admin->username;
         }
-        if ( $this->isAgency() && $this->normal !== null ) {
-            return $this->normal->username;
+        if ( $this->isNormal() && $this->normalUser !== null ) {
+            return $this->normalUser->username;
         }
     
         return null;

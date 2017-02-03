@@ -3,7 +3,7 @@ namespace common\models\forms;
 
 use Yii;
 use yii\base\Model;
-use common\models\Client;
+use common\models\NormalUser;
 
 /**
  * Login form
@@ -14,7 +14,7 @@ class LoginForm extends Model
     public $password;
     public $rememberMe = true;
 
-    private $_client = false;
+    private $_normal_user = false;
 
     /**
      * @inheritdoc
@@ -41,8 +41,8 @@ class LoginForm extends Model
     public function validatePassword($attribute, $params)
     {
         if (!$this->hasErrors()) {
-            $client = $this->getClient();
-            if (!$client || !$client->validatePassword($this->password)) {
+            $normal_user = $this->getNormalUser();
+            if (!$normal_user || !$normal_user->validatePassword($this->password)) {
                 $this->addError($attribute, 'Incorrect username or password.');
             }
         }
@@ -67,12 +67,12 @@ class LoginForm extends Model
      *
      * @return Admin|null
      */
-    public function getClient()
+    public function getNormalUser()
     {
-        if ($this->_client === false) {
-            $this->_client = Client::findOne(['email' => $this->email]);
+        if ($this->_normal_user === false) {
+            $this->_normal_user = NormalUser::findOne(['email' => $this->email]);
         }
-        return $this->_client;
+        return $this->_normal_user;
     }
 
     /**
@@ -82,8 +82,8 @@ class LoginForm extends Model
      */
     protected function getUser()
     {
-        if ($this->getClient() !== null) {
-            return $this->getClient()->user;
+        if ($this->getNormalUser() !== null) {
+            return $this->getNormalUser()->user;
         }
 
         return null;
