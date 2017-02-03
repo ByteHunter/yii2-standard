@@ -12,6 +12,8 @@ use common\models\forms\AdminLoginForm;
  */
 class SiteController extends Controller
 {
+    public $layout = 'main';
+    
     /**
      * @inheritdoc
      */
