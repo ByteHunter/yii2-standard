@@ -35,7 +35,11 @@ AppAsset::register($this);
         ],
     ]);
     $menuItems = [
-        ['label' => 'Home', 'url' => ['/site/index']],
+        ['label' => 'Dashboard', 'url' => ['/site/index']],
+        [
+            'label' => 'Home',
+            'url' => \Yii::$app->frontendUrlManager->createAbsoluteUrl(['/'],true),
+        ]
     ];
     if (Yii::$app->user->isGuest) {
         $menuItems[] = ['label' => 'Login', 'url' => ['/site/login']];
