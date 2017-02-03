@@ -6,6 +6,13 @@ $config = [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => '',
         ],
+        'frontendUrlManager' => [
+            'class' => 'yii\web\UrlManager',
+            'enablePrettyUrl' => true,
+            'showScriptName' => false,
+            'baseUrl' => 'http://yii-restful.dev',
+            'rules' => require(\Yii::getAlias('@frontend/config') . '/url.php'),
+        ],
     ],
 ];
 
@@ -19,6 +26,14 @@ if (!YII_ENV_TEST) {
     $config['bootstrap'][] = 'gii';
     $config['modules']['gii'] = [
         'class' => 'yii\gii\Module',
+        'generators' => [
+            'model' => [
+                'class' => '\giiTemplates\model\Generator',
+                'templates' => [
+                    'bhModel' => '@giiTemplates/model/default',
+                ]
+            ]
+        ]
     ];
 }
 

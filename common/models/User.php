@@ -2,37 +2,45 @@
 namespace common\models;
 
 use Yii;
-use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
+use yii\db\Expression;
 
 /**
  * User model
  *
- * @property integer $id
- * @property string $username
- * @property string $password_hash
- * @property string $password_reset_token
- * @property string $email
+ * @property string $id
  * @property string $auth_key
- * @property integer $status
- * @property integer $created_at
- * @property integer $updated_at
- * @property string $password write-only password
+ * @property string $password_reset_token
+ * @property string $account_confirm_token
+ * @property string $type
+ * @property string $status
+ * @property string $created_at
+ * @property string $updated_at
+ * @property string $last_activity
+ * 
+ * @property Admin $admin
+ * @property AuthAssignment[] $authAssignments
+ * @property AuthItem[] $itemNames
+ * @property NormalUser $normalUser
  */
 class User extends ActiveRecord implements IdentityInterface
 {
-    const STATUS_DELETED = 0;
-    const STATUS_ACTIVE = 10;
-
+    use \common\traits\DeleteExceptionTrait;
+    
+    const TYPE_ADMIN    = 'admin';
+    const TYPE_NORMAL   = 'normal';
+    const STATUS_DELETED    = 'deleted';
+    const STATUS_SUSPENDED  = 'suspended';
+    const STATUS_ACTIVE     = 'active';
 
     /**
      * @inheritdoc
      */
     public static function tableName()
     {
-        return '{{%user}}';
+        return 'user';
     }
 
     /**
@@ -41,8 +49,22 @@ class User extends ActiveRecord implements IdentityInterface
     public function behaviors()
     {
         return [
-            TimestampBehavior::className(),
+            [
+                'class' => TimestampBehavior::className(),
+                'value' => new Expression('now()'),
+            ]
         ];
+    }
+    
+    /**
+     * After saving refresh model to get rid of 'Expression Now()` y datetime fields
+     * {@inheritDoc}
+     * @see \yii\db\BaseActiveRecord::afterSave()
+     */
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+        $this->refresh();
     }
 
     /**
@@ -51,17 +73,114 @@ class User extends ActiveRecord implements IdentityInterface
     public function rules()
     {
         return [
-            ['status', 'default', 'value' => self::STATUS_ACTIVE],
-            ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_DELETED]],
+            [['auth_key'], 'required'],
+            [['type', 'status'], 'string'],
+            [['created', 'updated', 'last_activity'], 'safe'],
+            [['auth_key'], 'string', 'max' => 32],
+            [['password_reset_token', 'account_confirm_token'], 'string', 'max' => 255],
+            [['password_reset_token'], 'unique'],
+            [['account_confirm_token'], 'unique'],
+            ['type', 'default', 'value' => self::TYPE_NORMAL],
+            ['type', 'in', 'range' => [
+                self::TYPE_ADMIN, self::TYPE_NORMAL
+            ]],
+            ['status', 'default', 'value' => self::STATUS_SUSPENDED],
+            ['status', 'in', 'range' => [
+                self::STATUS_ACTIVE, self::STATUS_DELETED, self::STATUS_SUSPENDED
+            ]],
         ];
     }
+    
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+            'id'                    => Yii::t('common/models', 'ID'),
+            'auth_key'              => Yii::t('common/models', 'Auth Key'),
+            'password_reset_token'  => Yii::t('common/models', 'Password Reset Token'),
+            'account_confirm_token' => Yii::t('common/models', 'Account Confirm Token'),
+            'type'                  => Yii::t('common/models', 'Type'),
+            'status'                => Yii::t('common/models', 'Status'),
+            'created_at'            => Yii::t('common/models', 'Created At'),
+            'updated_at'            => Yii::t('common/models', 'Updated At'),
+            'last_activity'         => Yii::t('common/models', 'Last Activity'),
+        ];
+    }
+    
+    /**
+     * @return string[]
+     */
+    public function typeLabels()
+    {
+        return [
+            self::TYPE_ADMIN    => Yii::t('common/models','Admin'),
+            self::TYPE_NORMAL   => Yii::t('common/models','Normal User'),
+        ];
+    }
+    
+    /**
+     * @return string[]
+     */
+    public function statusLabels()
+    {
+        return [
+            self::STATUS_ACTIVE     => Yii::t('common/models','Active'),
+            self::STATUS_DELETED    => Yii::t('common/models','Deleted'),
+            self::STATUS_SUSPENDED  => Yii::t('common/models','Suspended'),
+        ];
+    }
+    
+    /* ---------------------------------------------------------------------------------------------
+     * Relations
+     * ------------------------------------------------------------------------------------------ */
+    
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAdmin()
+    {
+        return $this->hasOne(Admin::className(), ['user_id' => 'id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAuthAssignments()
+    {
+        return $this->hasMany(AuthAssignment::className(), ['user_id' => 'id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getItemNames()
+    {
+        return $this->hasMany(AuthItem::className(), ['name' => 'item_name'])->viaTable('auth_assignment', ['user_id' => 'id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getNormalUser()
+    {
+        return $this->hasOne(NormalUser::className(), ['user_id' => 'id']);
+    }
+    
+    /* ---------------------------------------------------------------------------------------------
+     * Identity methods
+     * ------------------------------------------------------------------------------------------ */
 
     /**
      * @inheritdoc
      */
     public static function findIdentity($id)
     {
-        return static::findOne(['id' => $id, 'status' => self::STATUS_ACTIVE]);
+        return static::findOne([
+            'id' => $id,
+            'status' => static::STATUS_ACTIVE
+        ]);
     }
 
     /**
@@ -69,18 +188,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findIdentityByAccessToken($token, $type = null)
     {
-        throw new NotSupportedException('"findIdentityByAccessToken" is not implemented.');
-    }
-
-    /**
-     * Finds user by username
-     *
-     * @param string $username
-     * @return static|null
-     */
-    public static function findByUsername($username)
-    {
-        return static::findOne(['username' => $username, 'status' => self::STATUS_ACTIVE]);
+        throw new NotSupportedException('"findIdentityByAccessToken" is not supported.');
     }
 
     /**
@@ -97,7 +205,7 @@ class User extends ActiveRecord implements IdentityInterface
 
         return static::findOne([
             'password_reset_token' => $token,
-            'status' => self::STATUS_ACTIVE,
+            'status' => static::STATUS_ACTIVE,
         ]);
     }
 
@@ -116,6 +224,20 @@ class User extends ActiveRecord implements IdentityInterface
         $timestamp = (int) substr($token, strrpos($token, '_') + 1);
         $expire = Yii::$app->params['user.passwordResetTokenExpire'];
         return $timestamp + $expire >= time();
+    }
+    
+    /**
+     * Finds user by account confirmation token
+     *
+     * @param string $token password reset token
+     * @return static|null
+     */
+    public static function findByAccountConfirmToken($token)
+    {
+        return static::findOne([
+            'account_confirm_token' => $token,
+            'status' => self::STATUS_ACTIVE,
+        ]);
     }
 
     /**
@@ -143,27 +265,6 @@ class User extends ActiveRecord implements IdentityInterface
     }
 
     /**
-     * Validates password
-     *
-     * @param string $password password to validate
-     * @return bool if password provided is valid for current user
-     */
-    public function validatePassword($password)
-    {
-        return Yii::$app->security->validatePassword($password, $this->password_hash);
-    }
-
-    /**
-     * Generates password hash from password and sets it to the model
-     *
-     * @param string $password
-     */
-    public function setPassword($password)
-    {
-        $this->password_hash = Yii::$app->security->generatePasswordHash($password);
-    }
-
-    /**
      * Generates "remember me" authentication key
      */
     public function generateAuthKey()
@@ -185,5 +286,98 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken()
     {
         $this->password_reset_token = null;
+    }
+    
+    /**
+     * Generates new account confirmation token
+     */
+    public function generateAccountConfirmToken()
+    {
+        $this->account_confirm_token = Yii::$app->security->generateRandomString();
+    }
+    
+    /**
+     * Removes account confirmation token
+     */
+    public function removeAccountConfirmToken()
+    {
+        $this->account_confirm_token = null;
+    }
+    
+    /* ------------------------------------------------------------------------
+     * Utilities
+     * ------------------------------------------------------------------------ */
+    
+    /**
+     * @return boolean
+     */
+    public function isAdmin()
+    {
+        return $this->type === self::TYPE_ADMIN;
+    }
+    
+    /**
+     * @return boolean
+     */
+    public function isNormal()
+    {
+        return $this->type === self::TYPE_NORMAL;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isActive()
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+    
+    /**
+     * @return boolean
+     */
+    public function isDeleted()
+    {
+        return $this->status === self::STATUS_DELETED;
+    }
+    
+    /**
+     * @return boolean
+     */
+    public function isSuspended()
+    {
+        return $this->status === self::STATUS_SUSPENDED;
+    }
+    
+    /**
+     * Overrides the default getter to call the username of specific child model
+     * API Users are not listed here
+     * @return mixed string|null The username
+     */
+    public function getUsername()
+    {
+        if ( $this->isAdmin() && $this->admin !== null ) {
+            return $this->admin->username;
+        }
+        if ( $this->isNormal() && $this->normalUser !== null ) {
+            return $this->normalUser->username;
+        }
+    
+        return null;
+    }
+
+    /**
+     * @return string Type of user in a more friendly format
+     */
+    public function getTypeLabel()
+    {
+        return $this->typeLabels()[$this->type];
+    }
+    
+    /**
+     * @return string Status label
+     */
+    public function getStatusLabel()
+    {
+        return $this->statusLabels()[$this->status];
     }
 }
