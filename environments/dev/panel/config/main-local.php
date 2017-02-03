@@ -26,6 +26,14 @@ if (!YII_ENV_TEST) {
     $config['bootstrap'][] = 'gii';
     $config['modules']['gii'] = [
         'class' => 'yii\gii\Module',
+        'generators' => [
+            'model' => [
+                'class' => '\giiTemplates\model\Generator',
+                'templates' => [
+                    'bhModel' => '@giiTemplates/model/default',
+                ]
+            ]
+        ]
     ];
 }
 
