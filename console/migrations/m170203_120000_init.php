@@ -120,6 +120,27 @@ class m170203_120000_init extends Migration
         $this->createIndex('idx-normal_user-user_id', 'normal_user', 'user_id');
         $this->createIndex('idx-normal_user-username', 'normal_user', 'username', true);
         $this->createIndex('idx-normal_user-email', 'normal_user', 'email', true);
+
+        /*
+         * Table `api_access`
+         */
+        $this->createTable('api_access', [
+            'id'                    => 'int(10) unsigned auto_increment PRIMARY KEY',
+            'username'              => 'varchar(255) not null',
+            'email'                 => 'varchar(255) not null',
+            'password_hash'         => 'varchar(255) not null',
+            'access_token'          => 'varchar(32) not null',
+            'password_reset_token'  => 'varchar(255)',
+            'type'                  => 'enum("admin","client") not null default "client"',
+            'status'                => 'enum("deleted","suspended","active") not null default "active"',
+            'created_at'            => 'datetime',
+            'updated_at'            => 'datetime',
+            'last_activity'         => 'datetime',
+        ], $tableOptions);
+        $this->createIndex('idx-api_access-username', 'api_access', 'username', true);
+        $this->createIndex('idx-api_access-email', 'api_access', 'email', true);
+        $this->createIndex('idx-api_access-access_token', 'api_access', 'access_token', true);
+        $this->createIndex('idx-api_access-password_reset_token', 'api_access', 'password_reset_token', true);
         
         /*
          * Foreign keys
@@ -150,5 +171,6 @@ class m170203_120000_init extends Migration
         $this->dropTable('user');
         $this->dropTable('admin');
         $this->dropTable('normal_user');
+        $this->dropTable('api_access');
     }
 }
