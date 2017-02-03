@@ -12,7 +12,7 @@ return [
             'baseUrl' => 'http://panel.example.com',
             'rules' => require(\Yii::getAlias('@panel/config') . '/url.php'),
         ],
-        'frontendUrlManager' => [
+        'urlManager' => [
             'class' => 'yii\web\UrlManager',
             'enablePrettyUrl' => true,
             'showScriptName' => false,
