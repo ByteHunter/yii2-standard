@@ -17,7 +17,7 @@ use Yii;
  * @property string $created_at
  * @property string $updated_at
  *
- * @property User $user
+ * @property \common\models\User $user
  */
 class Admin extends \yii\db\ActiveRecord
 {

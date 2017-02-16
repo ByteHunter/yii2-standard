@@ -3,15 +3,43 @@ namespace console\controllers;
 
 
 use yii\console\Controller;
+use common\models\Admin;
 
+/**
+ * Helps maintain administrators's access to this application.
+ * 
+ * @author Rostislav Pleshivtsev Oparina
+ */
 class AdminController extends Controller
 {
     /**
+     * Shows a list of administrators
      * @return number
      */
     public function actionIndex()
     {
-        return 0;
+        $models = Admin::find()->all();
+
+        $this->stdout(str_pad('ID', '4', ' ', STR_PAD_RIGHT));
+        $this->stdout(str_pad('Username', '32', ' ', STR_PAD_RIGHT));
+        $this->stdout(str_pad('AccessToken', '40', ' ', STR_PAD_RIGHT));
+        $this->stdout(str_pad('Status', '8', ' ', STR_PAD_RIGHT));
+        $this->stdout(PHP_EOL);
+        $this->stdout(str_pad('', '100', '-') . PHP_EOL);
+        
+        $key = -1;
+        /** @var \common\models\Admin $model */
+        foreach ($models as $key => $model) {
+            $this->stdout(str_pad($model->id, '4', ' ', STR_PAD_RIGHT));
+            $this->stdout(str_pad($model->username, '32', ' ', STR_PAD_RIGHT));
+            $this->stdout(str_pad($model->email, '40', ' ', STR_PAD_RIGHT));
+            $this->stdout(str_pad($model->user->getStatusLabel(), '8', ' ', STR_PAD_RIGHT));
+            $this->stdout(PHP_EOL);
+        }
+        
+        $key++;
+        $this->stdout(str_pad('', '100', '-') . PHP_EOL);
+        $this->stdout("Total: $key models" . PHP_EOL);
     }
     
     /**
@@ -75,5 +103,57 @@ class AdminController extends Controller
             $this->stderr("Couldn't delete administrator {$email}.\n");
             $this->stderr(\yii\helpers\VarDumper::dump($model->getErrors()));
         }
+    }
+    
+    /**
+     * Activates an administrator which enables it's login
+     * @param integer $id Administrator's model ID
+     * @return number Exit code
+     */
+    public function actionActivate($id)
+    {
+        $model = \common\models\Admin::findOne($id);
+        
+        if ($model === null) {
+            $this->stderr("Sorry, could not find administrator with this ID.\n");
+            return 1;
+        }
+        
+        if ($model->user->isActive()) {
+            $this->stdout("This administrator ({$model->username}) is already active .\n");
+            return 0;
+        } else {
+            if ($model->user->activate() !== false) {
+                $this->stdout("Administrator ({$model->username}) has been activated.\n");
+            }
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * Suspends an administrator, which will disable it's login
+     * @param integer $id Administrator's model ID
+     * @return number Exit code
+     */
+    public function actionSuspend($id)
+    {
+        $model = \common\models\Admin::findOne($id);
+        
+        if ($model === null) {
+            $this->stderr("Sorry, could not find administrator with this ID.\n");
+            return 1;
+        }
+        
+        if ($model->user->isSuspended()) {
+            $this->stdout("This administrator ({$model->username}) is already suspended .\n");
+            return 0;
+        } else {
+            if ($model->user->suspend() !== false) {
+                $this->stdout("Administrator ({$model->username}) has been suspended.\n");
+            }
+        }
+        
+        return 0;
     }
 }

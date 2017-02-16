@@ -309,6 +309,26 @@ class User extends ActiveRecord implements IdentityInterface
      * ------------------------------------------------------------------------ */
     
     /**
+     * Activate user
+     * @return number|false
+     */
+    public function activate()
+    {
+        $this->status = static::STATUS_ACTIVE;
+        return $this->update();
+    }
+    
+    /**
+     * Suspends this user
+     * @return number|false
+     */
+    public function suspend()
+    {
+        $this->status = static::STATUS_SUSPENDED;
+        return $this->update();
+    }
+    
+    /**
      * @return boolean
      */
     public function isAdmin()
