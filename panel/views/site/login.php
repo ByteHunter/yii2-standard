@@ -8,7 +8,7 @@ use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 use yii\helpers\Url;
 
-$this->title = 'Login';
+$this->title = Yii::t('panel', 'Login');
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="login-box">
@@ -21,11 +21,11 @@ $this->params['breadcrumbs'][] = $this->title;
 
         <?php $form = ActiveForm::begin([]) ?>
             <div class="form-group has-feedback">
-                <?= Html::activeInput('email', $model, 'email', ['placeholder' => 'Email', 'class' => 'form-control']) ?>
+                <?= Html::activeInput('email', $model, 'email', ['placeholder' => Yii::t('panel', 'Email'), 'class' => 'form-control']) ?>
                 <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
             </div>
             <div class="form-group has-feedback">
-                <?= Html::activeInput('password', $model, 'password', ['placeholder' => 'Contraseña', 'class' => 'form-control']) ?>
+                <?= Html::activeInput('password', $model, 'password', ['placeholder' => Yii::t('panel', 'Password'), 'class' => 'form-control']) ?>
                 <span class="glyphicon glyphicon-lock form-control-feedback"></span>
             </div>
             <div class="row">
