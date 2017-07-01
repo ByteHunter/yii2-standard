@@ -1,5 +1,5 @@
 {
-    "name": "bytehunter/yii2-restful",
+    "name": "bytehunter/yii2-standard",
     "description": "Yii2 template focused on serving RESTful API, with some cool extra features",
     "keywords": ["yii2", "framework", "restful", "application template", "bytehunter"],
     "homepage": "https://github.com/ByteHunter/yii2-restful/wiki",
